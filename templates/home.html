@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+		
+{% block content %}
+
+	<script src="{% static 'js/ThirdParty/Cesium/Cesium.js' %}"></script>
+    <style>@import url("{% static 'js/ThirdParty/Cesium/Widgets/widgets.css' %}");</style>
+	<style type="text/css">@import url("{% static 'css/estilos.css' %}")</style>
+	<div id="cesiumContainer"></div>
+
+	<div class="backdrop" id="menu">
+	    <h2>Bienvenido a SIMONA Bogotá</h2>
+	    <p> Monitorea el entorno de tu ciudad, da click en la estación y aprende más</p>
+	</div>
+  
+
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript">
+		Cesium.BingMapsApi.defaultKey = 'AtHvBOhSaChgEtA-KDaWLtRUd9Jy6stGteeIVX4nHi-3S6ZkIBZn4UTzf5EO4noH'; // Generate a new Bing Key for your app at https://msdn.microsoft.com/en-us/library/ff428642.aspx
+
+		//////////////////////////////////////////////////////////////////////////
+		// Creating the Viewer
+		//////////////////////////////////////////////////////////////////////////
+
+		//var viewer = new Cesium.Viewer('cesiumContainer');
+		//
+		var viewer = new Cesium.Viewer('cesiumContainer', {
+		    scene3DOnly: true,
+		    selectionIndicator: false,
+		    baseLayerPicker: false
+		});
+		// agrego imagen 3D
+		viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+		    url : 'https://dev.virtualearth.net',
+		    mapStyle: Cesium.BingMapsStyle.AERIAL // Can also use Cesium.BingMapsStyle.ROAD
+		}));
+
+		//cargo el STK
+		viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+		    url : '//assets.agi.com/stk-terrain/world',
+		    requestWaterMask : true, // required for water effects
+		    requestVertexNormals : false // required for terrain lighting
+		});
+		viewer.scene.globe.depthTestAgainstTerrain = true;
+		viewer.scene.globe.enableLighting = true;
+
+		// posicion inicial
+
+		var initialPosition = new Cesium.Cartesian3.fromDegrees(-74.060407, 4.6943365, 4800.2);
+		var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(9.1077496389876024807, -31.987223091598949054, 0.025883251314954971306);
+		var homeCameraView = {
+		    destination : initialPosition,
+		    orientation : {
+		        heading : initialOrientation.heading,
+		        pitch : initialOrientation.pitch,
+		        roll : initialOrientation.roll
+		    }
+		};
+		viewer.scene.camera.setView(homeCameraView);
+		homeCameraView.duration = 2.0;
+		homeCameraView.maximumHeight = 2000;
+		homeCameraView.pitchAdjustHeight = 2000;
+		homeCameraView.endTransform = Cesium.Matrix4.IDENTITY;
+		
+		var entities = viewer.entities;
+
+		{% for estacion in valores %}
+		// valores de la base de datos
+			var X = parseFloat("{{ estacion.longitud }}");
+			var Y = parseFloat("{{ estacion.latitud }}");
+			var Z = parseFloat("{{ estacion.altura }}");
+			entities.add({
+
+				name : "{{ estacion.nombre }}",
+				description : '<table class="cesium-infoBox-defaultTable"><tbody>' +
+                                 '<tr><th>Codigo Estación</th><td>' + "{{ estacion.idEstacion }}" + '</td></tr>' +
+                                 '<tr><th>Nombre</th><td>' + "{{ estacion.nombre }}" + '</td></tr>' +
+                                 '<tr><th>descripcion</th><td>' + "{{ estacion.descripcion }}" + '</td></tr>' +
+                                 '<tr><th>Longitud</th><td>' + "{{ estacion.longitud }}" + '</td></tr>' +
+                                 '<tr><th>Latitud</th><td>' + "{{ estacion.latitud }}" + '</td></tr>' + 
+                                 '<tr><th>Altura</th><td>' + "{{ estacion.altura }}" + '</td></tr>'+
+                                 '<tr><th>Ultima captura NO2</th><td>' + "{{ estacion.NO2_fecha }}" + '</td></tr>' +
+                                 '<tr><th>Ultima medida NO2</th><td>' + "{{ estacion.NO2_medida }}" + '</td></tr>' +
+                                 '<tr><th>unidades medida NO2</th><td>' + "{{ estacion.NO2_unidadesM }}" + '</td></tr>' +
+                                 '<tr><th>Ultima captura CO2</th><td>' + "{{ estacion.CO2_fecha }}" + '</td></tr>' +
+                                 '<tr><th>Ultima medida CO2</th><td>' + "{{ estacion.CO2_medida }}" + '</td></tr>' +
+                                 '<tr><th>unidades medida CO2</th><td>' + "{{ estacion.CO2_unidadesM }}" + '</td></tr>' +
+                                 '</tbody></table>',
+
+			    position : Cesium.Cartesian3.fromDegrees(X, Y, Z),
+			    cylinder : {
+			        hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray([-118.0, 30.0,
+			        	-115.0, 30.0,
+			        	-117.1, 31.1,
+			        	-118.0, 33.0])),
+			        length : Math.random() * (1500 - 400) + 400,
+			        topRadius : 30.0,
+			        bottomRadius : 30.0,
+			        outline : true,
+			        outlineColor : Cesium.Color.YELLOW,
+			        outlineWidth : 4,
+			        material : Cesium.Color.fromRandom({alpha : 1.0})
+			    }
+			});	
+			
+
+		{% endfor %}
+		
+	</script>
+
+
+
+	
+{% endblock %}
